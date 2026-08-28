@@ -285,6 +285,7 @@ func NodeUpdadte(c *gin.Context) {
 	Node.LinkPort = identity.Port
 
 	Node.Link = link
+	Node.ClashExtra = ""
 	Node.DialerProxyName = dialerProxyName
 	Node.Group = group
 	Node.Protocol = protocol.GetProtocolFromLink(link)
@@ -503,11 +504,18 @@ func NodeAdd(c *gin.Context) {
 					failedCount++
 					continue
 				}
+				clashExtra, extraErr := protocol.EncodeClashExtra(proxy)
+				if extraErr != nil {
+					utils.Warn("节点【%s】未知 Clash 属性序列化失败，跳过: %v", proxy.Name, extraErr)
+					failedCount++
+					continue
+				}
 				// 创建节点并添加；Clash YAML 中的备注由系统生成，重复时自动追加编号。
 				var n models.Node
 				n.Name = models.GenerateUniqueNodeName(proxy.Name, 0, nil)
 				n.NameMode = models.NodeNameModeLink
 				n.Link = proxyLink
+				n.ClashExtra = clashExtra
 				n.LinkName = proxy.Name
 				n.LinkHost = proxy.Server
 				n.LinkPort = strconv.Itoa(proxy.Port.Int())
