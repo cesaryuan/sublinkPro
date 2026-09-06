@@ -242,6 +242,7 @@ func NodeUpdadte(c *gin.Context) {
 		utils.FailWithMsg(c, err.Error())
 		return
 	}
+	storedLink := Node.Link
 	oldContentHash := Node.ContentHash
 	if hasNameMode {
 		Node.NameMode = models.NormalizeNodeNameMode(nameMode)
@@ -285,7 +286,10 @@ func NodeUpdadte(c *gin.Context) {
 	Node.LinkPort = identity.Port
 
 	Node.Link = link
-	Node.ClashExtra = ""
+	if link != storedLink {
+		// 链接发生变化后，旧链接对应的未建模 Clash 字段不再可靠，必须丢弃以避免错配。
+		Node.ClashExtra = ""
+	}
 	Node.DialerProxyName = dialerProxyName
 	Node.Group = group
 	Node.Protocol = protocol.GetProtocolFromLink(link)
